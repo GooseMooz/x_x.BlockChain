@@ -11,6 +11,10 @@ find_package(OpenSSL REQUIRED)
 
 include_directories(${OPENSSL_INCLUDE_DIR})
 
-add_executable(BlockChain main.cpp)
+add_executable(BlockChain Block.cpp
+        BlockChain.cpp
+        BlockChain.h
+        Block.h
+)
 
 target_link_libraries(BlockChain OpenSSL::SSL OpenSSL::Crypto)
