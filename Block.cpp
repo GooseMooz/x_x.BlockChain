@@ -4,17 +4,19 @@
 #include <sstream>
 #include <utility>
 #include <iomanip>
+#include <vector>
 
 class Block {
 public:
-    int index;
+    int id;
     std::string timestamp;
     std::string data;
     std::string hash;
     std::string previousHash;
+    std::vector<std::string> txs;
 
     Block(int tx, std::string prevHash, std::string blockData) {
-        index = tx;
+        id = tx;
         timestamp = std::to_string(std::time(nullptr));
         data = std::move(blockData);
         hash = calculateHash();
@@ -23,7 +25,7 @@ public:
 
     std::string calculateHash() const {
         std::stringstream ss;
-        ss << index << previousHash << timestamp << data;
+        ss << id << previousHash << timestamp << data;
         return sha256(ss.str());
     }
 

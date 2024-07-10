@@ -1,13 +1,14 @@
 #ifndef BLOCKCHAIN_BLOCK_H
 #define BLOCKCHAIN_BLOCK_H
 #include <iostream>
+#include <vector>
 
 class Block {
 public:
     /*
      * Block ID
      */
-    int index;
+    int id;
 
     /*
      * Timestamp of a Block
@@ -28,6 +29,11 @@ public:
      * Hash of this Block
      */
     std::string hash;
+
+    /*
+     * Transactions List
+     */
+    std::vector<std::string> txs;
 
     /*
      * Simple Block constructor. WIP
