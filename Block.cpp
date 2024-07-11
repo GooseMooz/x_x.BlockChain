@@ -14,6 +14,7 @@ public:
     std::string hash;
     std::string previousHash;
     std::vector<std::string> txs;
+    int nonce = 0;
 
     Block(int tx, std::string prevHash, std::string blockData) {
         id = tx;

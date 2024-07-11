@@ -36,6 +36,11 @@ public:
     std::vector<std::string> txs;
 
     /*
+     * Nonce for PoW algorithm
+     */
+    int nonce = 0;
+
+    /*
      * Simple Block constructor. WIP
      */
     Block(int tx, std::string prevHash, std::string blockData);
