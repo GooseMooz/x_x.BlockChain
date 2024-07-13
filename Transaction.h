@@ -7,7 +7,8 @@
 
 
 class Transaction {
-
+public:
+    int id;
 };
 
 
