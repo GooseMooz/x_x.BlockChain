@@ -1,26 +1,21 @@
-#include "Block.h"
-#include <vector>
+#include "BlockChain.h"
 
-class BlockChain {
-public:
-    BlockChain() {
-        chain.push_back(initBlockChain());
-    }
+BlockChain::BlockChain(int difficulty) : difficulty(difficulty) {
+    chain.emplace_back(createGenesisBlock());
+}
 
-    void addBlock(Block& newBlock) {
-        newBlock.previousHash = getLatestBlock().hash;
-        newBlock.hash = newBlock.calculateHash();
-        chain.push_back(newBlock);
-    }
+void BlockChain::addBlock(Block newBlock) {
+    newBlock.previousHash = getLatestBlock().hash;
+    newBlock.mineBlock(difficulty);
+    chain.push_back(std::move(newBlock));
+}
 
-    Block getLatestBlock() const {
-        return chain.back();
-    }
+Block BlockChain::getLatestBlock() const {
+    return chain.back();
+}
 
-private:
-    std::vector<Block> chain;
-
-    static Block initBlockChain() {
-        return {0, "0", "GenesisBlock"};
-    };
-};
+Block BlockChain::createGenesisBlock() {
+    std::vector<Transaction> genesisTransactions;
+    genesisTransactions.emplace_back("0", "Genesis", 0.0);
+    return Block(0, "0", genesisTransactions);
+}

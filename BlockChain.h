@@ -4,34 +4,43 @@
 #include <vector>
 #include "Block.h"
 
+/**
+ * @class BlockChain
+ * @brief Represents the blockchain.
+ */
 class BlockChain {
 public:
-    BlockChain();
-
-    /*
-     * Adds new block to the chain, calculating hashes.
-     * Doesn't have any verifying mechanism yet. WIP.
+    /**
+     * @brief Constructor for the BlockChain class.
+     * @param difficulty The mining difficulty.
      */
-    void addBlock(Block& newBlock);
+    explicit BlockChain(int difficulty);
 
-    /*
-     * Returns latest block in the chain.
+    /**
+     * @brief Adds a new block to the blockchain.
+     * @param newBlock The block to add.
+     */
+    void addBlock(Block newBlock);
+
+    /**
+     * @brief Gets the latest block in the blockchain.
+     * @return The latest block.
      */
     Block getLatestBlock() const;
 
-private:
-    /*
-     * Vector representing the blockchain.
-     * Right now doesn't have any self-clearing mechanisms. WIP.
+    /**
+     * @brief The chain of blocks.
      */
-    std::vector<Block> chain;
+    std::vector<Block> chain; ///< Exposed for simplicity
 
-    /*
-     * Generates genesis block.
-     * Right now has "0" hash. WIP
+private:
+    int difficulty;           ///< The mining difficulty
+
+    /**
+     * @brief Creates the genesis block.
+     * @return The genesis block.
      */
-    static Block initBlockChain();
+    static Block createGenesisBlock();
 };
 
-
-#endif //BLOCKCHAIN_BLOCKCHAIN_H
+#endif // BLOCKCHAIN_BLOCKCHAIN_H

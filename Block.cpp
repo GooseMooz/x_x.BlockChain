@@ -1,68 +1,89 @@
-#include <openssl/evp.h>
-#include <iostream>
-#include <ctime>
+#include "Block.h"
 #include <sstream>
-#include <utility>
 #include <iomanip>
-#include <vector>
+#include <ctime>
+#include <thread>
+#include <mutex>
 
-class Block {
-public:
-    int id;
-    std::string timestamp;
-    std::string data;
-    std::string hash;
-    std::string previousHash;
-    std::vector<std::string> txs;
-    int nonce = 0;
+// Mutex for thread synchronization
+std::mutex mtx;
 
-    Block(int tx, std::string prevHash, std::string blockData) {
-        id = tx;
-        timestamp = std::to_string(std::time(nullptr));
-        data = std::move(blockData);
-        hash = calculateHash();
-        previousHash = std::move(prevHash);
+Block::Block(int id, std::string prevHash, std::vector<Transaction> transactions)
+        : id(id), previousHash(std::move(prevHash)), transactions(std::move(transactions)), nonce(0) {
+    timestamp = std::to_string(std::time(nullptr));
+    hash = calculateHash();
+}
+
+std::string Block::calculateHash() const {
+    std::stringstream ss;
+    ss << id << previousHash << timestamp << nonce << generateProofOfHistory();
+    for (const auto &tx : transactions) {
+        ss << tx.getTransactionData();
+    }
+    return sha256(ss.str());
+}
+
+void Block::mineBlock(int difficulty) {
+    std::string target(difficulty, '0');
+
+    auto mine = [&](int thread_id, int max_nonce) {
+        while (true) {
+            std::lock_guard<std::mutex> lock(mtx);
+            if (hash.substr(0, difficulty) == target) {
+                break;
+            }
+            nonce++;
+            hash = calculateHash();
+            if (nonce >= max_nonce) {
+                break;
+            }
+        }
+    };
+
+    const int max_nonce = INT32_MAX;
+    const int num_threads = std::thread::hardware_concurrency();
+    std::vector<std::thread> threads;
+
+    // Start mining threads
+    for (int i = 0; i < num_threads; ++i) {
+        threads.emplace_back(mine, i, max_nonce);
     }
 
-    std::string calculateHash() const {
-        std::stringstream ss;
-        ss << id << previousHash << timestamp << data;
-        return sha256(ss.str());
+    // Join threads
+    for (auto &t : threads) {
+        t.join();
+    }
+}
+
+std::string Block::generateProofOfHistory() const {
+    // Simplified PoH implementation
+    std::string poh = sha256(timestamp + previousHash);
+    return poh;
+}
+
+std::string Block::sha256(const std::string &inputStr) {
+    unsigned char hash[EVP_MAX_MD_SIZE];
+    unsigned int lengthOfHash = 0;
+
+    EVP_MD_CTX *context = EVP_MD_CTX_new();
+
+    if (context == nullptr) {
+        throw std::runtime_error("Failed to create OpenSSL context");
     }
 
-private:
-    static std::string sha256(const std::string &inputStr) {
-        EVP_MD_CTX* context = EVP_MD_CTX_new();
-        if (context == nullptr) {
-            throw std::runtime_error("Failed to create context!");
-        }
-
-        const EVP_MD* md = EVP_sha256();
-        unsigned char hashCalculate[EVP_MAX_MD_SIZE];
-        unsigned int hashLen = 0;
-
-        if (EVP_DigestInit_ex(context, md, nullptr) != 1) {
-            EVP_MD_CTX_free(context);
-            throw std::runtime_error("Failed to initialize digest!");
-        }
-
-        if (EVP_DigestUpdate(context, inputStr.c_str(), inputStr.size()) != 1) {
-            EVP_MD_CTX_free(context);
-            throw std::runtime_error("Failed to update digest!");
-        }
-
-        if (EVP_DigestFinal_ex(context, hashCalculate, &hashLen) != 1) {
-            EVP_MD_CTX_free(context);
-            throw std::runtime_error("Failed to finalize digest!");
-        }
-
+    if (EVP_DigestInit_ex(context, EVP_sha256(), nullptr) != 1 ||
+        EVP_DigestUpdate(context, inputStr.c_str(), inputStr.length()) != 1 ||
+        EVP_DigestFinal_ex(context, hash, &lengthOfHash) != 1) {
         EVP_MD_CTX_free(context);
-
-        std::stringstream ss;
-        for (unsigned int i = 0; i < hashLen; ++i) {
-            ss << std::hex << std::setw(2) << std::setfill('0') << (int)hashCalculate[i];
-        }
-
-        return ss.str();
+        throw std::runtime_error("Failed to compute SHA-256 hash");
     }
-};
+
+    EVP_MD_CTX_free(context);
+
+    std::stringstream ss;
+    for (unsigned int i = 0; i < lengthOfHash; ++i) {
+        ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+    }
+
+    return ss.str();
+}
